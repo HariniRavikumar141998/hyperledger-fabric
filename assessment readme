@@ -1,0 +1,229 @@
+./network.sh down
+
+1.(Remove containers and artifacts)
+
+./network.sh up createChannel
+
+2.(This will create mychannel along with network.sh up for org 1 and org 2)
+
+./network.sh deployCC -ccn basic -ccp ../asset-transfer-basic/chaincode-javascript -ccl javascript
+
+3.(Deploy nodejs chaincode for org1 and org2)
+
+export PATH=${PWD}/../bin:$PATH
+export FABRIC_CFG_PATH=$PWD/../config/
+export CORE_PEER_TLS_ENABLED=true
+export CORE_PEER_LOCALMSPID="Org1MSP"
+export CORE_PEER_TLS_ROOTCERT_FILE=${PWD}/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt
+export CORE_PEER_MSPCONFIGPATH=${PWD}/organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp
+export CORE_PEER_ADDRESS=localhost:7051
+
+4.(Set env variables for org 1)
+
+
+peer chaincode invoke -o localhost:7050 --ordererTLSHostnameOverride orderer.example.com --tls --cafile "${PWD}/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem" -C mychannel -n basic --peerAddresses localhost:7051 --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt" --peerAddresses localhost:9051 --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt" -c '{"function":"InitLedger","Args":[]}'
+
+5.(InitLedger command for org1 and org 2)
+
+peer chaincode query -C mychannel -n basic -c '{"Args":["GetAllCustomers"]}'
+output:
+[]
+
+6.(This will get all the customer details)
+
+peer chaincode invoke -o localhost:7050 --ordererTLSHostnameOverride orderer.example.com --tls --cafile "${PWD}/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem" -C mychannel -n basic --peerAddresses localhost:7051 --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt" --peerAddresses localhost:9051 --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt" -c '{"function":"CreateCustomer","Args":["7","Customer","wewe"]}'
+
+7.(This will add customers)(Also check with the same command with same data if it throws error for same id)(space issue)
+
+peer chaincode query -C mychannel -n basic -c '{"Args":["ReadCustomer","7"]}'
+
+8.(To read customers data)
+
+export CORE_PEER_TLS_ENABLED=true
+export CORE_PEER_LOCALMSPID="Org2MSP"
+export CORE_PEER_TLS_ROOTCERT_FILE=${PWD}/organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt
+export CORE_PEER_MSPCONFIGPATH=${PWD}/organizations/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp
+export CORE_PEER_ADDRESS=localhost:9051
+
+9.(Set the env variables for org2)
+
+peer chaincode invoke -o localhost:7050 --ordererTLSHostnameOverride orderer.example.com --tls --cafile "${PWD}/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem" -C mychannel -n basic --peerAddresses localhost:7051 --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt" --peerAddresses localhost:9051 --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt" -c '{"function":"CreateInsurance","Args":["7","Insurance","wewe"]}'
+
+10.(Create Insurance)
+
+peer chaincode query -C mychannel -n basic -c '{"Args":["ReadInsurance","7"]}'
+
+11.(to fetch insurance based on insurance id)
+
+peer chaincode invoke -o localhost:7050 --ordererTLSHostnameOverride orderer.example.com --tls --cafile "${PWD}/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem" -C mychannel -n basic --peerAddresses localhost:7051 --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt" --peerAddresses localhost:9051 --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt" -c '{"function":"CreateInsuranceObject","Args":["3","Car","0","3400","yes","no","yes"]}'
+
+12.(Create InsuranceObject)
+
+peer chaincode query -C mychannel -n basic -c '{"Args":["ReadInsuranceObject","3"]}'
+
+13.(To read customers data)
+
+cd addOrg3
+
+14.(Navigate to addOrg3)
+
+./addOrg3.sh generate -ca
+
+15.(This will generate certificates using fabric ca for org 3.Also this will create ca container for org3)
+
+export FABRIC_CFG_PATH=$PWD
+../../bin/configtxgen -printOrg Org3MSP > ../organizations/peerOrganizations/org3.example.com/org3.json
+
+16. (This will create org3.json file that contains information in configtxgen that we need inorder to update the channel configuration)(The export points towards configtx file inside addorg3)(Org3.json file has been created inside organizations folder)
+
+docker-compose -f docker/docker-compose-org3.yaml up -d
+
+17.(To start the docker container of peer.org3)(We will get an error of volume name is too short)(goto addorg3->docker->docker-compose-org3.yaml)(copy volumes value instead of docker sock and now try the above command again)
+
+cd ..
+export PATH=${PWD}/../bin:$PATH
+export FABRIC_CFG_PATH=${PWD}/../config/
+export CORE_PEER_TLS_ENABLED=true
+export CORE_PEER_LOCALMSPID="Org1MSP"
+export CORE_PEER_TLS_ROOTCERT_FILE=${PWD}/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt
+export CORE_PEER_MSPCONFIGPATH=${PWD}/organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp
+export CORE_PEER_ADDRESS=localhost:7051
+
+18.(Navigate back to test-network and set the env variables for org1)
+
+peer channel fetch config channel-artifacts/config_block.pb -o localhost:7050 --ordererTLSHostnameOverride orderer.example.com -c mychannel --tls --cafile "${PWD}/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem"
+
+19.(Fetching channel config block inside from org3,json to config_block.pb(proto buff file))
+
+configtxlator proto_decode --input ./channel-artifacts/config_block.pb --type common.Block --output ./channel-artifacts/config_block.json
+ 
+20.(Convert the config_block.pb to json file using configtxlator tool only from org 1 and org 2)
+
+jq ".data.data[0].payload.data.config" ./channel-artifacts/config_block.json > ./channel-artifacts/config.json
+
+21.(Using jq tool we are taking config code to config.json file)
+
+jq -s '.[0] * {"channel_group":{"groups":{"Application":{"groups": {"Org3MSP":.[1]}}}}}' ./channel-artifacts/config.json ./organizations/peerOrganizations/org3.example.com/org3.json > ./channel-artifacts/modified_config.json
+ 
+22.(Adding org3 config in modified_config.json file)(We can now find the org3 config as well inside this file)
+
+configtxlator proto_encode --input ./channel-artifacts/config.json --type common.Config --output ./channel-artifacts/config.pb
+
+23.(Translate config.json to config.pb file)
+
+configtxlator proto_encode --input ./channel-artifacts/modified_config.json --type common.Config --output ./channel-artifacts/modified_config.pb
+
+24.(Also translate modified_config.json file to modified_config.pb file ad it has org3 configurations)
+
+configtxlator compute_update --channel_id mychannel --original ./channel-artifacts/config.pb --updated ./channel-artifacts/modified_config.pb --output ./channel-artifacts/org3_update.pb
+
+25.(Now using above two command protobuf files we can calculate the delta)
+
+configtxlator proto_decode --input ./channel-artifacts/org3_update.pb --type common.ConfigUpdate --output ./channel-artifacts/org3_update.json
+
+26.(Now using the above command decode the org3 update.pb file to json file)
+
+echo '{"payload":{"header":{"channel_header":{"channel_id":"'mychannel'","type":2}},"data":{"config_update":'$(cat ./channel-artifacts/org3_update.json)'}}}' | jq . > ./channel-artifacts/org3_update_in_envelope.json
+
+27.(We can add the header details of org3 update.json)(Inside org3 update.json file the read set contains only org1 and 2 but in write set it contains org1,2 and 3)
+
+configtxlator proto_encode --input ./channel-artifacts/org3_update_in_envelope.json --type common.Envelope --output ./channel-artifacts/org3_update_in_envelope.pb
+
+28.(Now convert the file into protobuf file as org3_update_in_envelope.pb)
+
+peer channel signconfigtx -f channel-artifacts/org3_update_in_envelope.pb
+
+29.(We can sign the tx from org 1 as we have set the env of org1)
+
+export CORE_PEER_TLS_ENABLED=true
+export CORE_PEER_LOCALMSPID="Org2MSP"
+export CORE_PEER_TLS_ROOTCERT_FILE=${PWD}/organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt
+export CORE_PEER_MSPCONFIGPATH=${PWD}/organizations/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp
+export CORE_PEER_ADDRESS=localhost:9051
+
+30.(To sign and update the transaction from org 2 set env variables of org 2)
+
+peer channel update -f channel-artifacts/org3_update_in_envelope.pb -c mychannel -o localhost:7050 --ordererTLSHostnameOverride orderer.example.com --tls --cafile "${PWD}/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem"
+
+31.(Command to sign and update the transaction from org 2)
+
+export CORE_PEER_TLS_ENABLED=true
+export CORE_PEER_LOCALMSPID="Org3MSP"
+export CORE_PEER_TLS_ROOTCERT_FILE=${PWD}/organizations/peerOrganizations/org3.example.com/peers/peer0.org3.example.com/tls/ca.crt
+export CORE_PEER_MSPCONFIGPATH=${PWD}/organizations/peerOrganizations/org3.example.com/users/Admin@org3.example.com/msp
+export CORE_PEER_ADDRESS=localhost:11051
+
+32.(To join org3 to the channel set the env variables for org3)
+
+peer channel list
+
+33.(To list the channel of org3 as we have set the env variable for org 3)(No channel will be listed)
+
+peer channel fetch 0 channel-artifacts/mychannel.block -o localhost:7050 --ordererTLSHostnameOverride orderer.example.com -c mychannel --tls --cafile "${PWD}/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem"
+
+34.(This will fetch block 0 to join the channel)
+
+peer channel join -b channel-artifacts/mychannel.block
+
+35.(Peer join command to join the channel)
+
+peer channel list
+
+37.(Now if I do the peer channel list it will list the channel that org 3 has joined called as mychannel)
+
+peer channel getinfo -c mychannel
+
+38.(If want to see the number of blocks present inside the channel.)
+
+peer lifecycle chaincode install basic.tar.gz
+
+39.(Now install chaincode for org3)
+
+export CC_PACKAGE_ID=basic_1.0:b96c8815ffb081593192e0427c310e4022a111ce0cb895db234cca2378b9ff54
+
+40.(Export the chaincode id to approve the chaincode)
+
+peer lifecycle chaincode approveformyorg -o localhost:7050 --ordererTLSHostnameOverride orderer.example.com --tls --cafile "${PWD}/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem" --channelID mychannel --name basic --version 1.0 --package-id $CC_PACKAGE_ID --sequence 1
+
+41.(Approve chaincode for org3)
+
+peer lifecycle chaincode querycommitted --channelID mychannel --name basic --cafile "${PWD}/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem"
+
+42.(We can query commit the chaincode and if it shows org1,2 and 3 as true then the org3 has joined the channel and the chaincode has been installed)
+
+peer chaincode invoke -o localhost:7050 --ordererTLSHostnameOverride orderer.example.com --tls --cafile "${PWD}/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem" -C mychannel -n basic --peerAddresses localhost:7051 --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt" --peerAddresses localhost:9051 --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt" --peerAddresses localhost:11051 --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/org3.example.com/peers/peer0.org3.example.com/tls/ca.crt" -c '{"function":"InitLedger","Args":[]}'
+
+43.(We can invoke the chaincode by giving InitLedger for org1,2 and 3)
+
+peer chaincode invoke -o localhost:7050 --ordererTLSHostnameOverride orderer.example.com --tls --cafile "${PWD}/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem" -C mychannel -n basic --peerAddresses localhost:7051 --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt" --peerAddresses localhost:9051 --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt" --peerAddresses localhost:11051 --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/org3.example.com/peers/peer0.org3.example.com/tls/ca.crt" -c '{"function":"CreateBank","Args":["15","Bank","wewe"]}'
+
+44.(We can now query by adding bank details for org 3)
+
+peer chaincode query -C mychannel -n basic -c '{"Args":["GetAllCustomers"]}'
+
+45.(This will get all the customers details)
+
+peer chaincode query -C mychannel -n basic -c '{"Args":["GetAllCustomers"]}' | jq .
+
+46.(We can use jq to see the code in a better way)
+
+
+Hint:
+If you create one channel and add all the 3 orgs inside the same channel.Once you try to fetch details of any one org alone then it will get the details of all the three orgs as well. To fetch only one org then we have to create a seperate channel for seperate org.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
